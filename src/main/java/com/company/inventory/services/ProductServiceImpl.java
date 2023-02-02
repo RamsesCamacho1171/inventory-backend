@@ -206,5 +206,57 @@ public class ProductServiceImpl implements IProductService {
 		}
 		return new ResponseEntity<ProductResponseRest>(response, HttpStatus.OK);
 	}
+
+
+
+	@Override
+	@Transactional
+	public ResponseEntity<ProductResponseRest> update(Product product, Long CategoryId, Long productId) {
+		ProductResponseRest response = new ProductResponseRest();
+		List<Product> list = new ArrayList<>();
+		
+		try {
+			//buscar category para meterla en el producto
+			Optional<Category> category = categoryDao.findById(CategoryId);
+			
+			if(category.isPresent()) {
+				product.setCategory(category.get());
+				
+			}else {
+				response.setMetadata("respuesta nok", "-1", "Categoria no existe");
+				return new ResponseEntity<ProductResponseRest>(response, HttpStatus.NOT_FOUND);
+			}
+			
+			//buscar producto a actualizar
+			Optional <Product> productSearch = productDao.findById(productId);
+			
+			if(productSearch.isPresent()) {
+				productSearch.get().setAccount(product.getAccount());
+				productSearch.get().setCategory(product.getCategory());
+				productSearch.get().setName(product.getName());
+				productSearch.get().setPicture(product.getPicture());
+				productSearch.get().setPrice(product.getPrice());
+				//se guarda el producto
+				Product productToUpdate = productDao.save(productSearch.get());
+				if(productToUpdate != null){
+					list.add(productToUpdate);
+					response.getProducts().setProducts(list);
+					response.setMetadata("respuesta ok", "00", "Producto actualizado");
+				}else {
+					response.setMetadata("respuesta nok", "-1", "Producto no actualizado");
+					return new ResponseEntity<ProductResponseRest>(response, HttpStatus.BAD_REQUEST);
+				}
+
+			}else {
+				response.setMetadata("respuesta nok", "-1", "Producto no encontrado");
+				return new ResponseEntity<ProductResponseRest>(response, HttpStatus.NOT_FOUND);
+			}
+		} catch (Exception e) {
+			e.getStackTrace();
+			response.setMetadata("respuesta nok", "-1", "Error al actualizar producto");
+			return new ResponseEntity<ProductResponseRest>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return new ResponseEntity<ProductResponseRest>(response, HttpStatus.OK);
+	}
  
 }
